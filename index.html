@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 招財麻將紀錄</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { --bro-red: #e63946; --gf-green: #2a9d8f; --gold: #ffb703; --light: #fdfaf6; }
+        body { font-family: -apple-system, sans-serif; background: var(--light); margin: 0; padding: 15px; }
+        .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
+        h1, h3 { color: var(--bro-red); text-align: center; margin-top: 0; }
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .stat-card { padding: 15px; border-radius: 15px; text-align: center; color: white; }
+        .bro { background: var(--bro-red); }
+        .gf { background: var(--gf-green); }
+        .stat-card h2 { color: white; margin: 5px 0; font-size: 24px; }
+        label { display: block; margin-top: 10px; font-weight: bold; color: #555; font-size: 14px; }
+        input, select, button { width: 100%; padding: 12px; margin-top: 5px; border-radius: 10px; border: 1px solid #ddd; font-size: 16px; box-sizing: border-box; }
+        .btn-submit { background: linear-gradient(135deg, var(--bro-red), #b91d2a); color: white; border: none; margin-top: 20px; font-weight: bold; cursor: pointer; }
+        .chip-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px; }
+        .chip { background: #eee; padding: 5px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; }
+        .history-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; font-size: 14px; }
+        .win { color: var(--bro-red); font-weight: bold; }
+        .lose { color: #2196F3; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>🧧 2026 招財紀錄</h1>
+    <div class="card">
+        <div class="dashboard">
+            <div class="stat-card bro"><div>弟弟 (紅)</div><h2 id="bro-total">$0</h2></div>
+            <div class="stat-card gf"><div>女友 (綠)</div><h2 id="gf-total">$0</h2></div>
+        </div>
+    </div>
+    <div class="card">
+        <h3>📊 誰拉低平均？</h3>
+        <div style="height: 180px;"><canvas id="myChart"></canvas></div>
+    </div>
+    <div class="card">
+        <h3>📝 戰況登記</h3>
+        <label>是誰在打？</label>
+        <select id="player"><option value="弟弟">弟弟</option><option value="女友">女友</option></select>
+        <label>日期 (可回溯補記)</label>
+        <input type="date" id="date">
+        <label>地點</label>
+        <input type="text" id="location" placeholder="輸入地點">
+        <div id="recent-locations" class="chip-group"></div>
+        <label>金額</label>
+        <input type="number" id="amount" placeholder="贏錢填正數，輸錢填負數">
+        <label>特別榮譽 (選填)</label>
+        <input type="text" id="special" placeholder="大三元、連5、最高台數">
+        <button class="btn-submit" onclick="saveRecord()">💰 存入紀錄</button>
+    </div>
+    <div class="card">
+        <h3>📜 最近紀錄</h3>
+        <div id="history-list"></div>
+        <button onclick="clearAll()" style="background:none; color:#999; border:none; font-size:12px; margin-top:20px; width:100%; text-align:center;">清除所有資料</button>
+    </div>
+    <script>
+        let records = JSON.parse(localStorage.getItem('mjRecords')) || [];
+        let chartInstance = null;
+        document.getElementById('date').valueAsDate = new Date();
+        updateUI();
+
+        function saveRecord() {
+            const amount = parseFloat(document.getElementById('amount').value);
+            if(isNaN(amount)) return alert("請輸入金額！");
+            const record = {
+                id: Date.now(),
+                date: document.getElementById('date').value,
+                player: document.getElementById('player').value,
+                location: document.getElementById('location').value,
+                amount: amount,
+                special: document.getElementById('special').value
+            };
+            records.push(record);
+            localStorage.setItem('mjRecords', JSON.stringify(records));
+            updateUI();
+            document.getElementById('amount').value = "";
+            document.getElementById('special').value = "";
+            alert("已儲存！");
+        }
+
+        function updateUI() {
+            let broSum = 0, gfSum = 0, locs = new Set();
+            const listDiv = document.getElementById('history-list');
+            listDiv.innerHTML = "";
+            records.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(r => {
+                if(r.player === "弟弟") broSum += r.amount; else gfSum += r.amount;
+                if(r.location) locs.add(r.location);
+                listDiv.innerHTML += `<div class="history-item"><span>${r.date} ${r.location || ''} (${r.player})</span><span class="${r.amount >= 0 ? 'win' : 'lose'}">${r.amount >= 0 ? '+' : ''}${r.amount}</span></div>`;
+            });
+            document.getElementById('bro-total').innerText = `$${broSum}`;
+            document.getElementById('gf-total').innerText = `$${gfSum}`;
+            const locGroup = document.getElementById('recent-locations');
+            locGroup.innerHTML = "";
+            Array.from(locs).slice(-5).forEach(l => {
+                let span = document.createElement('span'); span.className = 'chip'; span.innerText = l;
+                span.onclick = () => document.getElementById('location').value = l;
+                locGroup.appendChild(span);
+            });
+            renderChart(broSum, gfSum);
+        }
+
+        function renderChart(b, g) {
+            const ctx = document.getElementById('myChart').getContext('2d');
+            if(chartInstance) chartInstance.destroy();
+            let bVal = Math.abs(b), gVal = Math.abs(g);
+            if(bVal === 0 && gVal === 0) { bVal = 1; gVal = 1; }
+            chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: { labels: ['弟弟', '女友'], datasets: [{ data: [bVal, gVal], backgroundColor: ['#e63946', '#2a9d8f'] }] },
+                options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+            });
+        }
+
+        function clearAll() { if(confirm("確定要刪除所有紀錄嗎？")) { localStorage.clear(); records = []; updateUI(); } }
+    </script>
+</body>
+</html>
