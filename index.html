@@ -6,49 +6,54 @@
     <title>2026 招財麻將帳本</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --bro-red: #e63946; --gf-green: #2a9d8f; --gold: #ffb703; --light: #fdfaf6; --grey: #888; --blue: #2196F3; }
+        :root { --win-red: #d90429; --lose-green: #2b9348; --gold: #ffb703; --light: #fdfaf6; --grey: #666; --player1-color: #2b2d42; --player2-color: #577590; }
         body { font-family: -apple-system, sans-serif; background: var(--light); margin: 0; padding: 15px; padding-bottom: 80px; }
         .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
-        h1, h3 { color: var(--bro-red); text-align: center; margin-top: 0; }
+        h1, h3 { color: var(--player1-color); text-align: center; margin-top: 0; }
         
-        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        /* 年度總覽樣式 */
+        .year-summary { text-align: center; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+        .year-summary small { color: var(--grey); font-size: 12px; }
+        .year-total { font-size: 28px; font-weight: 900; margin: 5px 0; }
+
+        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
         .stat-card { padding: 15px; border-radius: 15px; text-align: center; color: white; cursor: pointer; position: relative; }
         .stat-card::after { content: "✎"; position: absolute; top: 5px; right: 8px; font-size: 10px; opacity: 0.6; }
-        .bro { background: var(--bro-red); }
-        .gf { background: var(--gf-green); }
+        .bro-theme { background: var(--player1-color); }
+        .gf-theme { background: var(--player2-color); }
         .stat-card h2 { color: white; margin: 5px 0; font-size: 22px; }
         
-        .honor-wall { display: flex; justify-content: space-around; margin-top: 10px; font-size: 12px; border-top: 1px solid #eee; padding-top: 10px; }
+        .honor-wall { display: flex; justify-content: space-around; margin-top: 15px; font-size: 12px; }
         .honor-item { text-align: center; color: #555; }
         .honor-val { color: var(--gold); font-weight: bold; font-size: 16px; display: block; }
+
+        /* 圖表區塊 */
+        .chart-container { width: 100%; max-width: 250px; margin: 15px auto; }
 
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
         .calendar-day { padding: 12px 0; font-size: 13px; position: relative; border-radius: 10px; cursor: pointer; }
         .has-record::after { content: ""; position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; background: var(--gold); border-radius: 50%; }
         .selected-day { background: var(--gold) !important; color: white !important; }
-        .today { font-weight: bold; border: 1px solid var(--bro-red); }
-        .calendar-header { font-weight: bold; color: var(--grey); font-size: 12px; margin-bottom: 5px; }
+        .today { font-weight: bold; border: 1px solid var(--player1-color); }
 
         label { display: block; margin-top: 10px; font-weight: bold; color: #555; font-size: 13px; }
         input, select, button { width: 100%; padding: 12px; margin-top: 5px; border-radius: 10px; border: 1px solid #ddd; font-size: 16px; box-sizing: border-box; }
         
-        /* 贏輸切換按鈕樣式 */
         .win-lose-toggle { display: flex; gap: 10px; margin-top: 5px; }
-        .toggle-btn { flex: 1; padding: 10px; border: 2px solid #ddd; background: white; color: #888; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .toggle-btn.active-win { background: var(--bro-red); color: white; border-color: var(--bro-red); }
-        .toggle-btn.active-lose { background: var(--blue); color: white; border-color: var(--blue); }
+        .toggle-btn { flex: 1; padding: 10px; border: 2px solid #ddd; background: white; color: #888; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .toggle-btn.active-win { background: var(--win-red); color: white; border-color: var(--win-red); }
+        .toggle-btn.active-lose { background: var(--lose-green); color: white; border-color: var(--lose-green); }
 
-        .btn-submit { background: linear-gradient(135deg, var(--bro-red), #b91d2a); color: white; border: none; margin-top: 20px; font-weight: bold; cursor: pointer; font-size: 18px; }
+        .btn-submit { background: linear-gradient(135deg, var(--player1-color), #000); color: white; border: none; margin-top: 20px; font-weight: bold; cursor: pointer; }
         
         .history-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; }
-        .item-info { flex-grow: 1; }
-        .item-info b { font-size: 14px; }
+        .item-info b { font-size: 14px; color: #333; }
         .item-info small { color: var(--grey); font-size: 11px; display: block; }
         .badge { background: #fff8e1; color: #ffa000; border: 1px solid #ffe082; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-top: 4px; display: inline-block; }
         .item-amount { text-align: right; margin-right: 15px; font-weight: bold; font-size: 16px; }
-        .win { color: var(--bro-red); }
-        .lose { color: var(--blue); }
-        .btn-delete { background: none; border: none; color: #ddd; cursor: pointer; padding: 5px; font-size: 20px; line-height: 1; }
+        .win { color: var(--win-red); }
+        .lose { color: var(--lose-green); }
+        .btn-delete { background: none; border: none; color: #ddd; cursor: pointer; font-size: 20px; width: 30px; }
     </style>
 </head>
 <body>
@@ -56,25 +61,34 @@
     <h1>🧧 2026 招財帳本</h1>
 
     <div class="card">
+        <div class="year-summary">
+            <small>2026 年度共同總結</small>
+            <div class="year-total" id="year-combined">$0</div>
+        </div>
+
         <div class="dashboard">
-            <div class="stat-card bro" onclick="editName('bro')">
+            <div class="stat-card bro-theme" onclick="editName('bro')">
                 <div id="name-bro">宸</div><h2 id="bro-total">$0</h2>
             </div>
-            <div class="stat-card gf" onclick="editName('gf')">
+            <div class="stat-card gf-theme" onclick="editName('gf')">
                 <div id="name-gf">慧</div><h2 id="gf-total">$0</h2>
             </div>
         </div>
+
         <div class="honor-wall">
             <div class="honor-item"><span id="name-bro-max">宸</span>最高台數<span class="honor-val" id="bro-max">0</span></div>
             <div class="honor-item"><span id="name-gf-max">慧</span>最高台數<span class="honor-val" id="gf-max">0</span></div>
-            <div class="honor-item">共同總收支<span class="honor-val" style="color:#e63946" id="year-combined">$0</span></div>
+        </div>
+
+        <div class="chart-container">
+            <canvas id="ratioChart"></canvas>
         </div>
     </div>
 
     <div class="card">
         <h3 id="calendar-month">2026年 1月</h3>
-        <div class="calendar-grid calendar-header">
-            <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
+        <div class="calendar-grid">
+            <div style="color:var(--grey);font-size:12px;">日</div><div style="color:var(--grey);font-size:12px;">一</div><div style="color:var(--grey);font-size:12px;">二</div><div style="color:var(--grey);font-size:12px;">三</div><div style="color:var(--grey);font-size:12px;">四</div><div style="color:var(--grey);font-size:12px;">五</div><div style="color:var(--grey);font-size:12px;">六</div>
         </div>
         <div id="calendar-body" class="calendar-grid"></div>
     </div>
@@ -91,24 +105,19 @@
             <option value="bro" id="opt-bro">宸</option>
             <option value="gf" id="opt-gf">慧</option>
         </select>
-        
         <label>日期</label>
         <input type="date" id="date">
-        
         <label>地點</label>
-        <input type="text" id="location" placeholder="例如：家裡">
-
+        <input type="text" id="location" placeholder="地點">
         <label>結算結果</label>
         <div class="win-lose-toggle">
             <button class="toggle-btn active-win" id="btn-win" onclick="setWinLose(1)">贏錢 (+)</button>
             <button class="toggle-btn" id="btn-lose" onclick="setWinLose(-1)">輸錢 (-)</button>
         </div>
-        <input type="number" id="amount" placeholder="輸入金額 (免加負號)">
-
+        <input type="number" id="amount" placeholder="輸入金額">
         <label>🏅 榮譽榜 (選填)</label>
-        <input type="number" id="tai" placeholder="本次最高台數">
-        <input type="text" id="type" placeholder="特別牌型">
-        
+        <input type="number" id="tai" placeholder="台數">
+        <input type="text" id="type" placeholder="牌型">
         <button class="btn-submit" onclick="saveRecord()">💰 存入紀錄</button>
     </div>
 
@@ -116,28 +125,23 @@
         let records = JSON.parse(localStorage.getItem('mjRecords')) || [];
         let names = JSON.parse(localStorage.getItem('mjNames')) || { bro: "宸", gf: "慧" };
         let selectedDate = null;
-        let winLoseMultiplier = 1; // 1代表贏, -1代表輸
+        let winLoseMultiplier = 1;
+        let myChart = null;
 
         document.getElementById('date').valueAsDate = new Date();
         initApp();
 
         function setWinLose(val) {
             winLoseMultiplier = val;
-            const winBtn = document.getElementById('btn-win');
-            const loseBtn = document.getElementById('btn-lose');
-            if(val === 1) {
-                winBtn.className = 'toggle-btn active-win';
-                loseBtn.className = 'toggle-btn';
-            } else {
-                winBtn.className = 'toggle-btn';
-                loseBtn.className = 'toggle-btn active-lose';
-            }
+            document.getElementById('btn-win').className = val === 1 ? 'toggle-btn active-win' : 'toggle-btn';
+            document.getElementById('btn-lose').className = val === -1 ? 'toggle-btn active-lose' : 'toggle-btn';
         }
 
         function initApp() {
             updateNames();
             updateUI();
             renderCalendar();
+            updateChart();
         }
 
         function editName(type) {
@@ -150,22 +154,18 @@
         }
 
         function updateNames() {
-            document.getElementById('name-bro').innerText = names.bro;
-            document.getElementById('name-gf').innerText = names.gf;
-            document.getElementById('name-bro-max').innerText = names.bro;
-            document.getElementById('name-gf-max').innerText = names.gf;
-            document.getElementById('opt-bro').innerText = names.bro;
-            document.getElementById('opt-gf').innerText = names.gf;
+            ['bro', 'gf'].forEach(id => {
+                document.getElementById(`name-${id}`).innerText = names[id];
+                document.getElementById(`name-${id}-max`).innerText = names[id];
+                document.getElementById(`opt-${id}`).innerText = names[id];
+            });
         }
 
         function saveRecord() {
             let amt = parseFloat(document.getElementById('amount').value);
             if(isNaN(amt)) return alert("請輸入金額！");
-            
-            // 自動根據選擇套用正負號
             amt = Math.abs(amt) * winLoseMultiplier;
-
-            const record = {
+            records.push({
                 id: Date.now(),
                 date: document.getElementById('date').value,
                 player: document.getElementById('player').value,
@@ -173,22 +173,17 @@
                 amount: amt,
                 tai: parseInt(document.getElementById('tai').value) || 0,
                 type: document.getElementById('type').value
-            };
-            records.push(record);
+            });
             localStorage.setItem('mjRecords', JSON.stringify(records));
-            
-            // 清空輸入
             document.getElementById('amount').value = "";
             document.getElementById('tai').value = "";
             document.getElementById('type').value = "";
-            setWinLose(1); // 回歸預設贏
-            
+            setWinLose(1);
             initApp();
-            alert("紀錄成功！");
         }
 
         function deleteRecord(id) {
-            if(confirm("確定要刪除這筆紀錄嗎？")) {
+            if(confirm("確定刪除？")) {
                 records = records.filter(r => r.id !== id);
                 localStorage.setItem('mjRecords', JSON.stringify(records));
                 initApp();
@@ -196,66 +191,64 @@
         }
 
         function renderCalendar() {
-            const now = new Date();
-            const year = now.getFullYear(); const month = now.getMonth();
-            document.getElementById('calendar-month').innerText = `${year}年 ${month + 1}月`;
-            const firstDay = new Date(year, month, 1).getDay();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const now = new Date(); const y = now.getFullYear(); const m = now.getMonth();
+            document.getElementById('calendar-month').innerText = `${y}年 ${m + 1}月`;
+            const first = new Date(y, m, 1).getDay();
+            const days = new Date(y, m + 1, 0).getDate();
             const body = document.getElementById('calendar-body');
             body.innerHTML = "";
-            const recordDates = records.map(r => r.date);
-            for(let i=0; i<firstDay; i++) body.innerHTML += `<div></div>`;
-            for(let d=1; d<=daysInMonth; d++) {
-                const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                const hasRec = recordDates.includes(dateStr) ? "has-record" : "";
-                const isToday = d === now.getDate() ? "today" : "";
+            for(let i=0; i<first; i++) body.innerHTML += `<div></div>`;
+            for(let d=1; d<=days; d++) {
+                const dateStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                const has = records.some(r => r.date === dateStr) ? "has-record" : "";
                 const isSel = selectedDate === dateStr ? "selected-day" : "";
-                const dayEl = document.createElement('div');
-                dayEl.className = `calendar-day ${hasRec} ${isToday} ${isSel}`;
-                dayEl.innerText = d;
-                dayEl.onclick = () => { selectedDate = (selectedDate === dateStr) ? null : dateStr; renderCalendar(); updateUI(); };
-                body.appendChild(dayEl);
+                body.innerHTML += `<div class="calendar-day ${has} ${isSel}" onclick="selectDate('${dateStr}')">${d}</div>`;
             }
         }
 
+        function selectDate(d) { selectedDate = (selectedDate === d) ? null : d; renderCalendar(); updateUI(); }
+
         function updateUI() {
             let broSum = 0, gfSum = 0, broMax = 0, gfMax = 0;
-            const listDiv = document.getElementById('history-list');
-            listDiv.innerHTML = "";
-
             records.forEach(r => {
-                if(r.player === "bro") { 
-                    broSum += r.amount; 
-                    if(r.tai > broMax) broMax = r.tai;
-                } else { 
-                    gfSum += r.amount; 
-                    if(r.tai > gfMax) gfMax = r.tai;
-                }
+                if(r.player === "bro") { broSum += r.amount; if(r.tai > broMax) broMax = r.tai; }
+                else { gfSum += r.amount; if(r.tai > gfMax) gfMax = r.tai; }
             });
-
             document.getElementById('bro-total').innerText = `$${broSum}`;
             document.getElementById('gf-total').innerText = `$${gfSum}`;
             document.getElementById('year-combined').innerText = `$${broSum + gfSum}`;
             document.getElementById('bro-max').innerText = broMax;
             document.getElementById('gf-max').innerText = gfMax;
 
-            let displayRecords = selectedDate ? records.filter(r => r.date === selectedDate) : records.sort((a,b) => b.id - a.id).slice(0, 10);
-            document.getElementById('detail-title').innerText = selectedDate ? `📅 ${selectedDate} 明細` : "📜 最近戰績";
+            const listDiv = document.getElementById('history-list');
+            listDiv.innerHTML = "";
+            let display = selectedDate ? records.filter(r => r.date === selectedDate) : records.slice().reverse().slice(0, 10);
+            display.forEach(r => {
+                const badge = r.tai || r.type ? `<span class="badge">🏅 ${r.tai ? r.tai+'台' : ''} ${r.type || ''}</span>` : "";
+                listDiv.innerHTML += `<div class="history-item">
+                    <div class="item-info"><b>${names[r.player]}</b> @ ${r.location || '家'}<small>${r.date}</small>${badge}</div>
+                    <div class="item-amount ${r.amount >= 0 ? 'win' : 'lose'}">${r.amount >= 0 ? '+' : ''}${r.amount}</div>
+                    <button class="btn-delete" onclick="deleteRecord(${r.id})">×</button>
+                </div>`;
+            });
+        }
 
-            if(displayRecords.length === 0) { listDiv.innerHTML = "<p style='text-align:center; color:#ccc; font-size:12px;'>無紀錄</p>"; return; }
-
-            displayRecords.forEach(r => {
-                const badge = r.tai || r.type ? `<span class="badge">🏅 ${r.tai ? r.tai+'台 ' : ''}${r.type || ''}</span>` : "";
-                listDiv.innerHTML += `
-                    <div class="history-item">
-                        <div class="item-info">
-                            <div><b>${names[r.player]}</b> @ ${r.location || '未知'}</div>
-                            <small>${r.date}</small>
-                            ${badge}
-                        </div>
-                        <div class="item-amount ${r.amount >= 0 ? 'win' : 'lose'}">${r.amount >= 0 ? '+' : ''}${r.amount}</div>
-                        <button class="btn-delete" onclick="deleteRecord(${r.id})">×</button>
-                    </div>`;
+        function updateChart() {
+            let broS = 0, gfS = 0;
+            records.forEach(r => { if(r.player === "bro") broS += r.amount; else gfS += r.amount; });
+            const ctx = document.getElementById('ratioChart').getContext('2d');
+            if (myChart) myChart.destroy();
+            myChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: [names.bro, names.gf],
+                    datasets: [{
+                        data: [Math.max(broS, 0), Math.max(gfS, 0)],
+                        backgroundColor: ['#2b2d42', '#577590'],
+                        borderWidth: 0
+                    }]
+                },
+                options: { plugins: { legend: { position: 'bottom' } } }
             });
         }
     </script>
