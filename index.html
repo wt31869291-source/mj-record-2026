@@ -6,7 +6,7 @@
     <title>2026 招財麻將帳本</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --bro-red: #e63946; --gf-green: #2a9d8f; --gold: #ffb703; --light: #fdfaf6; --grey: #888; }
+        :root { --bro-red: #e63946; --gf-green: #2a9d8f; --gold: #ffb703; --light: #fdfaf6; --grey: #888; --blue: #2196F3; }
         body { font-family: -apple-system, sans-serif; background: var(--light); margin: 0; padding: 15px; padding-bottom: 80px; }
         .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
         h1, h3 { color: var(--bro-red); text-align: center; margin-top: 0; }
@@ -18,7 +18,6 @@
         .gf { background: var(--gf-green); }
         .stat-card h2 { color: white; margin: 5px 0; font-size: 22px; }
         
-        /* 榮譽牆樣式 */
         .honor-wall { display: flex; justify-content: space-around; margin-top: 10px; font-size: 12px; border-top: 1px solid #eee; padding-top: 10px; }
         .honor-item { text-align: center; color: #555; }
         .honor-val { color: var(--gold); font-weight: bold; font-size: 16px; display: block; }
@@ -32,7 +31,14 @@
 
         label { display: block; margin-top: 10px; font-weight: bold; color: #555; font-size: 13px; }
         input, select, button { width: 100%; padding: 12px; margin-top: 5px; border-radius: 10px; border: 1px solid #ddd; font-size: 16px; box-sizing: border-box; }
-        .btn-submit { background: linear-gradient(135deg, var(--bro-red), #b91d2a); color: white; border: none; margin-top: 15px; font-weight: bold; cursor: pointer; }
+        
+        /* 贏輸切換按鈕樣式 */
+        .win-lose-toggle { display: flex; gap: 10px; margin-top: 5px; }
+        .toggle-btn { flex: 1; padding: 10px; border: 2px solid #ddd; background: white; color: #888; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .toggle-btn.active-win { background: var(--bro-red); color: white; border-color: var(--bro-red); }
+        .toggle-btn.active-lose { background: var(--blue); color: white; border-color: var(--blue); }
+
+        .btn-submit { background: linear-gradient(135deg, var(--bro-red), #b91d2a); color: white; border: none; margin-top: 20px; font-weight: bold; cursor: pointer; font-size: 18px; }
         
         .history-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; }
         .item-info { flex-grow: 1; }
@@ -41,7 +47,7 @@
         .badge { background: #fff8e1; color: #ffa000; border: 1px solid #ffe082; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-top: 4px; display: inline-block; }
         .item-amount { text-align: right; margin-right: 15px; font-weight: bold; font-size: 16px; }
         .win { color: var(--bro-red); }
-        .lose { color: #2196F3; }
+        .lose { color: var(--blue); }
         .btn-delete { background: none; border: none; color: #ddd; cursor: pointer; padding: 5px; font-size: 20px; line-height: 1; }
     </style>
 </head>
@@ -59,8 +65,8 @@
             </div>
         </div>
         <div class="honor-wall">
-            <div class="honor-item">宸最高台數<span class="honor-val" id="bro-max">0</span></div>
-            <div class="honor-item">慧最高台數<span class="honor-val" id="gf-max">0</span></div>
+            <div class="honor-item"><span id="name-bro-max">宸</span>最高台數<span class="honor-val" id="bro-max">0</span></div>
+            <div class="honor-item"><span id="name-gf-max">慧</span>最高台數<span class="honor-val" id="gf-max">0</span></div>
             <div class="honor-item">共同總收支<span class="honor-val" style="color:#e63946" id="year-combined">$0</span></div>
         </div>
     </div>
@@ -85,15 +91,24 @@
             <option value="bro" id="opt-bro">宸</option>
             <option value="gf" id="opt-gf">慧</option>
         </select>
+        
         <label>日期</label>
         <input type="date" id="date">
+        
         <label>地點</label>
         <input type="text" id="location" placeholder="例如：家裡">
-        <label>輸贏金額</label>
-        <input type="number" id="amount" placeholder="贏填正，輸填負">
+
+        <label>結算結果</label>
+        <div class="win-lose-toggle">
+            <button class="toggle-btn active-win" id="btn-win" onclick="setWinLose(1)">贏錢 (+)</button>
+            <button class="toggle-btn" id="btn-lose" onclick="setWinLose(-1)">輸錢 (-)</button>
+        </div>
+        <input type="number" id="amount" placeholder="輸入金額 (免加負號)">
+
         <label>🏅 榮譽榜 (選填)</label>
         <input type="number" id="tai" placeholder="本次最高台數">
-        <input type="text" id="type" placeholder="特別牌型 (如：五暗刻)">
+        <input type="text" id="type" placeholder="特別牌型">
+        
         <button class="btn-submit" onclick="saveRecord()">💰 存入紀錄</button>
     </div>
 
@@ -101,9 +116,23 @@
         let records = JSON.parse(localStorage.getItem('mjRecords')) || [];
         let names = JSON.parse(localStorage.getItem('mjNames')) || { bro: "宸", gf: "慧" };
         let selectedDate = null;
+        let winLoseMultiplier = 1; // 1代表贏, -1代表輸
 
         document.getElementById('date').valueAsDate = new Date();
         initApp();
+
+        function setWinLose(val) {
+            winLoseMultiplier = val;
+            const winBtn = document.getElementById('btn-win');
+            const loseBtn = document.getElementById('btn-lose');
+            if(val === 1) {
+                winBtn.className = 'toggle-btn active-win';
+                loseBtn.className = 'toggle-btn';
+            } else {
+                winBtn.className = 'toggle-btn';
+                loseBtn.className = 'toggle-btn active-lose';
+            }
+        }
 
         function initApp() {
             updateNames();
@@ -123,13 +152,19 @@
         function updateNames() {
             document.getElementById('name-bro').innerText = names.bro;
             document.getElementById('name-gf').innerText = names.gf;
+            document.getElementById('name-bro-max').innerText = names.bro;
+            document.getElementById('name-gf-max').innerText = names.gf;
             document.getElementById('opt-bro').innerText = names.bro;
             document.getElementById('opt-gf').innerText = names.gf;
         }
 
         function saveRecord() {
-            const amt = parseFloat(document.getElementById('amount').value);
+            let amt = parseFloat(document.getElementById('amount').value);
             if(isNaN(amt)) return alert("請輸入金額！");
+            
+            // 自動根據選擇套用正負號
+            amt = Math.abs(amt) * winLoseMultiplier;
+
             const record = {
                 id: Date.now(),
                 date: document.getElementById('date').value,
@@ -141,9 +176,13 @@
             };
             records.push(record);
             localStorage.setItem('mjRecords', JSON.stringify(records));
+            
+            // 清空輸入
             document.getElementById('amount').value = "";
             document.getElementById('tai').value = "";
             document.getElementById('type').value = "";
+            setWinLose(1); // 回歸預設贏
+            
             initApp();
             alert("紀錄成功！");
         }
