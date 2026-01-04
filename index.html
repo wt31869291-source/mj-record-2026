@@ -12,23 +12,17 @@
         h1, h3 { color: var(--player1-color); text-align: center; margin-top: 0; }
         
         .year-summary { text-align: center; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
-        .year-summary small { color: var(--grey); font-size: 12px; }
         .year-total { font-size: 28px; font-weight: 900; margin: 5px 0; }
 
         .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
-        .stat-card { padding: 15px; border-radius: 15px; text-align: center; color: white; cursor: pointer; position: relative; }
-        .stat-card::after { content: "✎"; position: absolute; top: 5px; right: 8px; font-size: 10px; opacity: 0.6; }
+        .stat-card { padding: 15px; border-radius: 15px; text-align: center; color: white; transition: 0.3s; }
         .bro-theme { background: var(--player1-color); }
         .gf-theme { background: var(--player2-color); }
         .stat-card h2 { color: white; margin: 5px 0; font-size: 22px; }
         
-        .honor-wall { display: flex; justify-content: space-around; margin-top: 15px; font-size: 12px; }
-        .honor-item { text-align: center; color: #555; }
-        .honor-val { color: var(--gold); font-weight: bold; font-size: 16px; display: block; }
-
         .chart-section { text-align: center; margin-top: 20px; }
-        .chart-title { font-size: 14px; font-weight: bold; color: var(--grey); margin-bottom: 10px; }
-        .chart-container { width: 100%; max-width: 220px; margin: 0 auto; }
+        .chart-title { font-size: 13px; font-weight: bold; color: var(--grey); margin-bottom: 10px; }
+        .chart-container { width: 100%; max-width: 200px; margin: 0 auto; }
 
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
         .calendar-day { padding: 12px 0; font-size: 13px; position: relative; border-radius: 10px; cursor: pointer; }
@@ -36,33 +30,36 @@
         .selected-day { background: var(--gold) !important; color: white !important; }
         .today { font-weight: bold; border: 1px solid var(--player1-color); }
 
-        label { display: block; margin-top: 10px; font-weight: bold; color: #555; font-size: 13px; }
+        label { display: block; margin-top: 15px; font-weight: bold; color: #555; font-size: 13px; }
         input, select, button { width: 100%; padding: 12px; margin-top: 5px; border-radius: 10px; border: 1px solid #ddd; font-size: 16px; box-sizing: border-box; }
         
+        .chip-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+        .chip { background: #eee; padding: 6px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; color: #666; }
+
         .win-lose-toggle { display: flex; gap: 10px; margin-top: 5px; }
         .toggle-btn { flex: 1; padding: 10px; border: 2px solid #ddd; background: white; color: #888; border-radius: 10px; font-weight: bold; cursor: pointer; }
-        .toggle-btn.active-win { background: var(--win-red); color: white; border-color: var(--win-red); }
-        .toggle-btn.active-lose { background: var(--lose-green); color: white; border-color: var(--lose-green); }
+        .active-win { background: var(--win-red) !important; color: white !important; border-color: var(--win-red) !important; }
+        .active-lose { background: var(--lose-green) !important; color: white !important; border-color: var(--lose-green) !important; }
 
-        .btn-submit { background: linear-gradient(135deg, var(--player1-color), #000); color: white; border: none; margin-top: 20px; font-weight: bold; cursor: pointer; }
+        .btn-submit { background: linear-gradient(135deg, var(--player1-color), #000); color: white; border: none; margin-top: 25px; font-weight: bold; cursor: pointer; font-size: 18px; }
         
         .history-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; }
-        .item-info b { font-size: 14px; color: #333; }
+        .item-info b { font-size: 14px; }
         .item-info small { color: var(--grey); font-size: 11px; display: block; }
-        .badge { background: #fff8e1; color: #ffa000; border: 1px solid #ffe082; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-top: 4px; display: inline-block; }
-        .item-amount { text-align: right; margin-right: 15px; font-weight: bold; font-size: 16px; }
+        .item-amount { text-align: right; margin-right: 10px; font-weight: bold; font-size: 16px; flex-shrink: 0; }
         .win { color: var(--win-red); }
         .lose { color: var(--lose-green); }
-        .btn-delete { background: none; border: none; color: #ddd; cursor: pointer; font-size: 20px; width: 30px; }
+        .action-btns { display: flex; gap: 5px; }
+        .btn-action { background: none; border: none; cursor: pointer; font-size: 16px; padding: 5px; color: #ccc; }
     </style>
 </head>
 <body>
 
-    <h1>🧧 2026 招財帳本</h1>
+    <h1 id="main-title">🧧 2026 招財帳本</h1>
 
     <div class="card">
         <div class="year-summary">
-            <small>2026 年度共同收支</small>
+            <small id="summary-label">2026 年度共同收支</small>
             <div class="year-total" id="year-combined">$0</div>
         </div>
 
@@ -75,16 +72,9 @@
             </div>
         </div>
 
-        <div class="honor-wall">
-            <div class="honor-item"><span id="name-bro-max">宸</span>最高台數<span class="honor-val" id="bro-max">0</span></div>
-            <div class="honor-item"><span id="name-gf-max">慧</span>最高台數<span class="honor-val" id="gf-max">0</span></div>
-        </div>
-
         <div class="chart-section">
-            <div class="chart-title" id="chart-label">📊 2026 全年獲利佔比</div>
-            <div class="chart-container">
-                <canvas id="ratioChart"></canvas>
-            </div>
+            <div class="chart-title" id="chart-label">📊 全年獲利佔比</div>
+            <div class="chart-container"><canvas id="ratioChart"></canvas></div>
         </div>
     </div>
 
@@ -97,12 +87,12 @@
     </div>
 
     <div class="card">
-        <h3 id="detail-title">📜 戰績明細</h3>
+        <h3 id="detail-title">📜 最近戰績</h3>
         <div id="history-list"></div>
     </div>
 
-    <div class="card">
-        <h3>📝 戰況登記</h3>
+    <div class="card" id="input-section">
+        <h3 id="form-title">📝 戰況登記</h3>
         <label>玩家</label>
         <select id="player">
             <option value="bro" id="opt-bro">宸</option>
@@ -112,6 +102,7 @@
         <input type="date" id="date">
         <label>地點</label>
         <input type="text" id="location" placeholder="地點">
+        <div id="recent-locations" class="chip-group"></div>
         <label>結算結果</label>
         <div class="win-lose-toggle">
             <button class="toggle-btn active-win" id="btn-win" onclick="setWinLose(1)">贏錢 (+)</button>
@@ -121,7 +112,7 @@
         <label>🏅 榮譽榜 (選填)</label>
         <input type="number" id="tai" placeholder="台數">
         <input type="text" id="type" placeholder="牌型">
-        <button class="btn-submit" onclick="saveRecord()">💰 存入紀錄</button>
+        <button class="btn-submit" onclick="saveRecord()" id="submit-btn">💰 存入紀錄</button>
     </div>
 
     <script>
@@ -130,6 +121,7 @@
         let selectedDate = null;
         let winLoseMultiplier = 1;
         let myChart = null;
+        let editingId = null;
 
         document.getElementById('date').valueAsDate = new Date();
         initApp();
@@ -142,24 +134,18 @@
 
         function initApp() {
             updateNames();
-            updateUI();
             renderCalendar();
-            updateChart();
+            updateUI();
         }
 
         function editName(type) {
-            const newName = prompt("修改暱稱：", names[type]);
-            if(newName) {
-                names[type] = newName;
-                localStorage.setItem('mjNames', JSON.stringify(names));
-                initApp();
-            }
+            const n = prompt("修改暱稱：", names[type]);
+            if(n) { names[type] = n; localStorage.setItem('mjNames', JSON.stringify(names)); initApp(); }
         }
 
         function updateNames() {
             ['bro', 'gf'].forEach(id => {
                 document.getElementById(`name-${id}`).innerText = names[id];
-                document.getElementById(`name-${id}-max`).innerText = names[id];
                 document.getElementById(`opt-${id}`).innerText = names[id];
             });
         }
@@ -168,6 +154,14 @@
             let amt = parseFloat(document.getElementById('amount').value);
             if(isNaN(amt)) return alert("請輸入金額！");
             amt = Math.abs(amt) * winLoseMultiplier;
+            
+            if(editingId) {
+                records = records.filter(r => r.id !== editingId);
+                editingId = null;
+                document.getElementById('submit-btn').innerText = "💰 存入紀錄";
+                document.getElementById('form-title').innerText = "📝 戰況登記";
+            }
+
             records.push({
                 id: Date.now(),
                 date: document.getElementById('date').value,
@@ -178,19 +172,31 @@
                 type: document.getElementById('type').value
             });
             localStorage.setItem('mjRecords', JSON.stringify(records));
+            clearForm();
+            initApp();
+        }
+
+        function clearForm() {
             document.getElementById('amount').value = "";
             document.getElementById('tai').value = "";
             document.getElementById('type').value = "";
             setWinLose(1);
-            initApp();
         }
 
-        function deleteRecord(id) {
-            if(confirm("確定刪除？")) {
-                records = records.filter(r => r.id !== id);
-                localStorage.setItem('mjRecords', JSON.stringify(records));
-                initApp();
-            }
+        function startEdit(id) {
+            const r = records.find(rec => rec.id === id);
+            if(!r) return;
+            editingId = id;
+            document.getElementById('player').value = r.player;
+            document.getElementById('date').value = r.date;
+            document.getElementById('location').value = r.location;
+            document.getElementById('amount').value = Math.abs(r.amount);
+            document.getElementById('tai').value = r.tai || "";
+            document.getElementById('type').value = r.type || "";
+            setWinLose(r.amount >= 0 ? 1 : -1);
+            document.getElementById('submit-btn').innerText = "💾 更新紀錄";
+            document.getElementById('form-title').innerText = "✏️ 編輯紀錄";
+            document.getElementById('input-section').scrollIntoView({behavior: "smooth"});
         }
 
         function renderCalendar() {
@@ -211,88 +217,83 @@
 
         function selectDate(d) { 
             selectedDate = (selectedDate === d) ? null : d; 
-            // 點擊日曆同步跳轉下方日期選擇器
-            if(selectedDate) {
-                document.getElementById('date').value = selectedDate;
-            } else {
-                document.getElementById('date').valueAsDate = new Date();
-            }
-            renderCalendar(); 
-            updateUI();
-            updateChart(); // 圖表隨日期跳動
+            document.getElementById('date').value = selectedDate || new Date().toISOString().split('T')[0];
+            renderCalendar(); updateUI();
         }
 
         function updateUI() {
-            let broSum = 0, gfSum = 0, broMax = 0, gfMax = 0;
-            records.forEach(r => {
-                if(r.player === "bro") { broSum += r.amount; if(r.tai > broMax) broMax = r.tai; }
-                else { gfSum += r.amount; if(r.tai > gfMax) gfMax = r.tai; }
-            });
-            document.getElementById('bro-total').innerText = `$${broSum}`;
-            document.getElementById('gf-total').innerText = `$${gfSum}`;
-            document.getElementById('year-combined').innerText = `$${broSum + gfSum}`;
-            document.getElementById('bro-max').innerText = broMax;
-            document.getElementById('gf-max').innerText = gfMax;
+            let bTotal = 0, gTotal = 0, locs = new Set();
+            let labelText = "2026 年度共同收支";
+            let chartLabel = "📊 全年獲利佔比";
 
+            // 過濾數據
+            let filtered = selectedDate ? records.filter(r => r.date === selectedDate) : records;
+            if(selectedDate) {
+                labelText = `${selectedDate} 當日收支`;
+                chartLabel = `📊 ${selectedDate} 當日佔比`;
+            }
+
+            filtered.forEach(r => {
+                if(r.player === "bro") bTotal += r.amount; else gTotal += r.amount;
+            });
+
+            // 更新大數字
+            document.getElementById('bro-total').innerText = `$${bTotal}`;
+            document.getElementById('gf-total').innerText = `$${gTotal}`;
+            document.getElementById('year-combined').innerText = `$${bTotal + gTotal}`;
+            document.getElementById('summary-label').innerText = labelText;
+            document.getElementById('chart-label').innerText = chartLabel;
+
+            // 更新地點快捷
+            records.forEach(r => { if(r.location) locs.add(r.location); });
+            const locGroup = document.getElementById('recent-locations');
+            locGroup.innerHTML = "";
+            Array.from(locs).reverse().slice(0, 5).forEach(l => {
+                const s = document.createElement('span'); s.className = 'chip'; s.innerText = l;
+                s.onclick = () => document.getElementById('location').value = l;
+                locGroup.appendChild(s);
+            });
+
+            // 更新列表
             const listDiv = document.getElementById('history-list');
             listDiv.innerHTML = "";
-            let display = selectedDate ? records.filter(r => r.date === selectedDate) : records.slice().reverse().slice(0, 10);
+            let display = selectedDate ? filtered : records.slice().reverse().slice(0, 10);
             document.getElementById('detail-title').innerText = selectedDate ? `📅 ${selectedDate} 明細` : "📜 最近戰績";
-
-            if(display.length === 0) { listDiv.innerHTML = "<p style='text-align:center; color:#ccc; font-size:12px;'>無紀錄</p>"; return; }
 
             display.forEach(r => {
                 const badge = r.tai || r.type ? `<span class="badge">🏅 ${r.tai ? r.tai+'台' : ''} ${r.type || ''}</span>` : "";
                 listDiv.innerHTML += `<div class="history-item">
                     <div class="item-info"><b>${names[r.player]}</b> @ ${r.location || '家'}<small>${r.date}</small>${badge}</div>
                     <div class="item-amount ${r.amount >= 0 ? 'win' : 'lose'}">${r.amount >= 0 ? '+' : ''}${r.amount}</div>
-                    <button class="btn-delete" onclick="deleteRecord(${r.id})">×</button>
+                    <div class="action-btns">
+                        <button class="btn-action" onclick="startEdit(${r.id})">✎</button>
+                        <button class="btn-action" onclick="deleteRecord(${r.id})">×</button>
+                    </div>
                 </div>`;
             });
+            updateChart(bTotal, gTotal);
         }
 
-        function updateChart() {
-            let bVal = 0, gVal = 0;
-            let labelText = "📊 2026 全年獲利佔比";
-            
-            if (selectedDate) {
-                labelText = `📊 ${selectedDate} 當日佔比`;
-                const dayRecs = records.filter(r => r.date === selectedDate);
-                dayRecs.forEach(r => {
-                    if(r.player === "bro") bVal += r.amount; else gVal += r.amount;
-                });
-            } else {
-                records.forEach(r => {
-                    if(r.player === "bro") bVal += r.amount; else gVal += r.amount;
-                });
-            }
-
-            document.getElementById('chart-label').innerText = labelText;
-
+        function updateChart(b, g) {
             const ctx = document.getElementById('ratioChart').getContext('2d');
             if (myChart) myChart.destroy();
-
-            // 如果兩個人都沒贏錢（總分為負或0），顯示灰色的空圖表
-            const hasData = bVal > 0 || gVal > 0;
-            
+            const hasData = b > 0 || g > 0;
             myChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: hasData ? [names.bro, names.gf] : ["今日無獲利"],
+                    labels: hasData ? [names.bro, names.gf] : ["無獲利"],
                     datasets: [{
-                        data: hasData ? [Math.max(bVal, 0), Math.max(gVal, 0)] : [1],
+                        data: hasData ? [Math.max(b, 0), Math.max(g, 0)] : [1],
                         backgroundColor: hasData ? ['#2b2d42', '#577590'] : ['#eeeeee'],
                         borderWidth: 0
                     }]
                 },
-                options: { 
-                    plugins: { 
-                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
-                        tooltip: { enabled: hasData }
-                    },
-                    cutout: '60%'
-                }
+                options: { plugins: { legend: { position: 'bottom' } }, cutout: '65%' }
             });
+        }
+
+        function deleteRecord(id) {
+            if(confirm("確定刪除？")) { records = records.filter(r => r.id !== id); localStorage.setItem('mjRecords', JSON.stringify(records)); initApp(); }
         }
     </script>
 </body>
