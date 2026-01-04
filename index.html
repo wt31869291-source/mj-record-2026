@@ -11,7 +11,6 @@
         .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
         h1, h3 { color: var(--player1-color); text-align: center; margin-top: 0; }
         
-        /* 年度總覽樣式 */
         .year-summary { text-align: center; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 15px; }
         .year-summary small { color: var(--grey); font-size: 12px; }
         .year-total { font-size: 28px; font-weight: 900; margin: 5px 0; }
@@ -27,8 +26,9 @@
         .honor-item { text-align: center; color: #555; }
         .honor-val { color: var(--gold); font-weight: bold; font-size: 16px; display: block; }
 
-        /* 圖表區塊 */
-        .chart-container { width: 100%; max-width: 250px; margin: 15px auto; }
+        .chart-section { text-align: center; margin-top: 20px; }
+        .chart-title { font-size: 14px; font-weight: bold; color: var(--grey); margin-bottom: 10px; }
+        .chart-container { width: 100%; max-width: 220px; margin: 0 auto; }
 
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
         .calendar-day { padding: 12px 0; font-size: 13px; position: relative; border-radius: 10px; cursor: pointer; }
@@ -62,7 +62,7 @@
 
     <div class="card">
         <div class="year-summary">
-            <small>2026 年度共同總結</small>
+            <small>2026 年度共同收支</small>
             <div class="year-total" id="year-combined">$0</div>
         </div>
 
@@ -80,8 +80,11 @@
             <div class="honor-item"><span id="name-gf-max">慧</span>最高台數<span class="honor-val" id="gf-max">0</span></div>
         </div>
 
-        <div class="chart-container">
-            <canvas id="ratioChart"></canvas>
+        <div class="chart-section">
+            <div class="chart-title" id="chart-label">📊 2026 全年獲利佔比</div>
+            <div class="chart-container">
+                <canvas id="ratioChart"></canvas>
+            </div>
         </div>
     </div>
 
@@ -206,7 +209,18 @@
             }
         }
 
-        function selectDate(d) { selectedDate = (selectedDate === d) ? null : d; renderCalendar(); updateUI(); }
+        function selectDate(d) { 
+            selectedDate = (selectedDate === d) ? null : d; 
+            // 點擊日曆同步跳轉下方日期選擇器
+            if(selectedDate) {
+                document.getElementById('date').value = selectedDate;
+            } else {
+                document.getElementById('date').valueAsDate = new Date();
+            }
+            renderCalendar(); 
+            updateUI();
+            updateChart(); // 圖表隨日期跳動
+        }
 
         function updateUI() {
             let broSum = 0, gfSum = 0, broMax = 0, gfMax = 0;
@@ -223,6 +237,10 @@
             const listDiv = document.getElementById('history-list');
             listDiv.innerHTML = "";
             let display = selectedDate ? records.filter(r => r.date === selectedDate) : records.slice().reverse().slice(0, 10);
+            document.getElementById('detail-title').innerText = selectedDate ? `📅 ${selectedDate} 明細` : "📜 最近戰績";
+
+            if(display.length === 0) { listDiv.innerHTML = "<p style='text-align:center; color:#ccc; font-size:12px;'>無紀錄</p>"; return; }
+
             display.forEach(r => {
                 const badge = r.tai || r.type ? `<span class="badge">🏅 ${r.tai ? r.tai+'台' : ''} ${r.type || ''}</span>` : "";
                 listDiv.innerHTML += `<div class="history-item">
@@ -234,21 +252,46 @@
         }
 
         function updateChart() {
-            let broS = 0, gfS = 0;
-            records.forEach(r => { if(r.player === "bro") broS += r.amount; else gfS += r.amount; });
+            let bVal = 0, gVal = 0;
+            let labelText = "📊 2026 全年獲利佔比";
+            
+            if (selectedDate) {
+                labelText = `📊 ${selectedDate} 當日佔比`;
+                const dayRecs = records.filter(r => r.date === selectedDate);
+                dayRecs.forEach(r => {
+                    if(r.player === "bro") bVal += r.amount; else gVal += r.amount;
+                });
+            } else {
+                records.forEach(r => {
+                    if(r.player === "bro") bVal += r.amount; else gVal += r.amount;
+                });
+            }
+
+            document.getElementById('chart-label').innerText = labelText;
+
             const ctx = document.getElementById('ratioChart').getContext('2d');
             if (myChart) myChart.destroy();
+
+            // 如果兩個人都沒贏錢（總分為負或0），顯示灰色的空圖表
+            const hasData = bVal > 0 || gVal > 0;
+            
             myChart = new Chart(ctx, {
-                type: 'pie',
+                type: 'doughnut',
                 data: {
-                    labels: [names.bro, names.gf],
+                    labels: hasData ? [names.bro, names.gf] : ["今日無獲利"],
                     datasets: [{
-                        data: [Math.max(broS, 0), Math.max(gfS, 0)],
-                        backgroundColor: ['#2b2d42', '#577590'],
+                        data: hasData ? [Math.max(bVal, 0), Math.max(gVal, 0)] : [1],
+                        backgroundColor: hasData ? ['#2b2d42', '#577590'] : ['#eeeeee'],
                         borderWidth: 0
                     }]
                 },
-                options: { plugins: { legend: { position: 'bottom' } } }
+                options: { 
+                    plugins: { 
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+                        tooltip: { enabled: hasData }
+                    },
+                    cutout: '60%'
+                }
             });
         }
     </script>
