@@ -3,55 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2026 招財麻將紀錄</title>
+    <title>2026 招財麻將帳本</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --bro-red: #e63946; --gf-green: #2a9d8f; --gold: #ffb703; --light: #fdfaf6; }
-        body { font-family: -apple-system, sans-serif; background: var(--light); margin: 0; padding: 15px; padding-bottom: 50px; }
+        :root { --bro-red: #e63946; --gf-green: #2a9d8f; --gold: #ffb703; --light: #fdfaf6; --grey: #888; }
+        body { font-family: -apple-system, sans-serif; background: var(--light); margin: 0; padding: 15px; padding-bottom: 80px; }
         .card { background: white; border-radius: 20px; padding: 20px; margin-bottom: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
         h1, h3 { color: var(--bro-red); text-align: center; margin-top: 0; }
         
-        /* 雙人看板與暱稱修改 */
-        .dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        /* 雙人看板 */
+        .dashboard { display: grid; grid-columns: 1fr 1fr; grid-template-columns: 1fr 1fr; gap: 15px; }
         .stat-card { padding: 15px; border-radius: 15px; text-align: center; color: white; cursor: pointer; position: relative; }
-        .stat-card::after { content: "✎"; position: absolute; top: 5px; right: 8px; font-size: 12px; opacity: 0.7; }
+        .stat-card::after { content: "✎"; position: absolute; top: 5px; right: 8px; font-size: 10px; opacity: 0.6; }
         .bro { background: var(--bro-red); }
         .gf { background: var(--gf-green); }
-        .stat-card h2 { color: white; margin: 5px 0; font-size: 24px; }
-        .name-label { font-size: 14px; font-weight: bold; }
+        .stat-card h2 { color: white; margin: 5px 0; font-size: 22px; }
+        .year-total { text-align: center; font-size: 13px; color: var(--grey); margin-top: 10px; }
 
         /* 月曆樣式 */
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; text-align: center; }
-        .calendar-day { padding: 10px 0; font-size: 14px; position: relative; border-radius: 10px; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
+        .calendar-day { padding: 12px 0; font-size: 13px; position: relative; border-radius: 10px; cursor: pointer; }
+        .calendar-day:active { background: #eee; }
         .has-record::after { content: ""; position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%); width: 4px; height: 4px; background: var(--gold); border-radius: 50%; }
-        .today { background: #eee; font-weight: bold; }
-        .calendar-header { font-weight: bold; color: #888; margin-bottom: 10px; }
+        .selected-day { background: var(--gold) !important; color: white !important; }
+        .today { font-weight: bold; border: 1px solid var(--bro-red); }
+        .calendar-header { font-weight: bold; color: var(--grey); margin-bottom: 5px; font-size: 12px; }
 
-        label { display: block; margin-top: 10px; font-weight: bold; color: #555; font-size: 14px; }
+        label { display: block; margin-top: 10px; font-weight: bold; color: #555; font-size: 13px; }
         input, select, button { width: 100%; padding: 12px; margin-top: 5px; border-radius: 10px; border: 1px solid #ddd; font-size: 16px; box-sizing: border-box; }
-        .btn-submit { background: linear-gradient(135deg, var(--bro-red), #b91d2a); color: white; border: none; margin-top: 20px; font-weight: bold; cursor: pointer; }
-        .chip-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 5px; }
-        .chip { background: #eee; padding: 5px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; }
-        .history-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; font-size: 13px; }
-        .win { color: var(--bro-red); font-weight: bold; }
-        .lose { color: #2196F3; font-weight: bold; }
+        .btn-submit { background: linear-gradient(135deg, var(--bro-red), #b91d2a); color: white; border: none; margin-top: 15px; font-weight: bold; cursor: pointer; }
+        
+        /* 歷史戰績與刪除 */
+        .history-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #eee; }
+        .item-info { flex-grow: 1; }
+        .item-info div { font-size: 14px; }
+        .item-info small { color: var(--grey); font-size: 11px; }
+        .item-amount { text-align: right; margin-right: 15px; font-weight: bold; }
+        .win { color: var(--bro-red); }
+        .lose { color: #2196F3; }
+        .btn-delete { background: none; border: none; color: #ffcccc; cursor: pointer; width: auto; padding: 5px; font-size: 18px; }
+        .btn-delete:hover { color: var(--bro-red); }
     </style>
 </head>
 <body>
 
-    <h1>🧧 2026 招財紀錄</h1>
+    <h1>🧧 2026 招財帳本</h1>
 
     <div class="card">
         <div class="dashboard">
             <div class="stat-card bro" onclick="editName('bro')">
-                <div class="name-label" id="name-bro">宸</div>
+                <div id="name-bro">宸</div>
                 <h2 id="bro-total">$0</h2>
             </div>
             <div class="stat-card gf" onclick="editName('gf')">
-                <div class="name-label" id="name-gf">慧</div>
+                <div id="name-gf">慧</div>
                 <h2 id="gf-total">$0</h2>
             </div>
         </div>
+        <div class="year-total">2026 年度共同總收支：<b id="year-combined">$0</b></div>
     </div>
 
     <div class="card">
@@ -60,16 +69,17 @@
             <div>日</div><div>一</div><div>二</div><div>三</div><div>四</div><div>五</div><div>六</div>
         </div>
         <div id="calendar-body" class="calendar-grid"></div>
+        <p style="font-size: 10px; color: #ccc; text-align: center; margin-top: 10px;">點擊日期可查看當日明細</p>
     </div>
 
     <div class="card">
-        <h3>📊 誰拉低平均？</h3>
-        <div style="height: 160px;"><canvas id="myChart"></canvas></div>
+        <h3 id="detail-title">📜 戰績明細</h3>
+        <div id="history-list"></div>
     </div>
 
     <div class="card">
         <h3>📝 戰況登記</h3>
-        <label>選擇玩家</label>
+        <label>玩家</label>
         <select id="player">
             <option value="bro" id="opt-bro">宸</option>
             <option value="gf" id="opt-gf">慧</option>
@@ -78,22 +88,15 @@
         <input type="date" id="date">
         <label>地點</label>
         <input type="text" id="location" placeholder="輸入地點">
-        <div id="recent-locations" class="chip-group"></div>
         <label>輸贏金額</label>
         <input type="number" id="amount" placeholder="贏填正，輸填負">
         <button class="btn-submit" onclick="saveRecord()">💰 存入紀錄</button>
     </div>
 
-    <div class="card">
-        <h3>📜 歷史戰績</h3>
-        <div id="history-list"></div>
-        <button onclick="clearAll()" style="background:none; color:#ccc; border:none; font-size:10px; width:100%; margin-top:30px;">清除資料</button>
-    </div>
-
     <script>
         let records = JSON.parse(localStorage.getItem('mjRecords')) || [];
         let names = JSON.parse(localStorage.getItem('mjNames')) || { bro: "宸", gf: "慧" };
-        let chartInstance = null;
+        let selectedDate = null;
 
         document.getElementById('date').valueAsDate = new Date();
         initApp();
@@ -105,11 +108,11 @@
         }
 
         function editName(type) {
-            const newName = prompt("請輸入新的暱稱：", names[type]);
+            const newName = prompt("修改暱稱：", names[type]);
             if(newName) {
                 names[type] = newName;
                 localStorage.setItem('mjNames', JSON.stringify(names));
-                updateNames();
+                initApp();
             }
         }
 
@@ -133,9 +136,16 @@
             records.push(record);
             localStorage.setItem('mjRecords', JSON.stringify(records));
             document.getElementById('amount').value = "";
-            updateUI();
-            renderCalendar();
+            initApp();
             alert("紀錄成功！");
+        }
+
+        function deleteRecord(id) {
+            if(confirm("確定要刪除這筆紀錄嗎？")) {
+                records = records.filter(r => r.id !== id);
+                localStorage.setItem('mjRecords', JSON.stringify(records));
+                initApp();
+            }
         }
 
         function renderCalendar() {
@@ -149,63 +159,68 @@
             const body = document.getElementById('calendar-body');
             body.innerHTML = "";
 
-            // 填充空白
+            const recordDates = records.map(r => r.date);
             for(let i=0; i<firstDay; i++) body.innerHTML += `<div></div>`;
 
-            // 填充日期
-            const recordDates = records.map(r => r.date);
             for(let d=1; d<=daysInMonth; d++) {
                 const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
                 const hasRec = recordDates.includes(dateStr) ? "has-record" : "";
                 const isToday = d === now.getDate() ? "today" : "";
-                body.innerHTML += `<div class="calendar-day ${hasRec} ${isToday}">${d}</div>`;
+                const isSel = selectedDate === dateStr ? "selected-day" : "";
+                
+                const dayEl = document.createElement('div');
+                dayEl.className = `calendar-day ${hasRec} ${isToday} ${isSel}`;
+                dayEl.innerText = d;
+                dayEl.onclick = () => {
+                    selectedDate = (selectedDate === dateStr) ? null : dateStr;
+                    renderCalendar();
+                    updateUI();
+                };
+                body.appendChild(dayEl);
             }
         }
 
         function updateUI() {
-            let broSum = 0, gfSum = 0, locs = new Set();
+            let broSum = 0, gfSum = 0;
             const listDiv = document.getElementById('history-list');
             listDiv.innerHTML = "";
 
-            records.sort((a,b) => new Date(b.date) - new Date(a.date)).forEach(r => {
-                const pName = names[r.player];
+            // 年度總計
+            records.forEach(r => {
                 if(r.player === "bro") broSum += r.amount; else gfSum += r.amount;
-                if(r.location) locs.add(r.location);
-                listDiv.innerHTML += `
-                    <div class="history-item">
-                        <span>${r.date} ${r.location || ''} (${pName})</span>
-                        <span class="${r.amount >= 0 ? 'win' : 'lose'}">${r.amount >= 0 ? '+' : ''}${r.amount}</span>
-                    </div>`;
             });
 
             document.getElementById('bro-total').innerText = `$${broSum}`;
             document.getElementById('gf-total').innerText = `$${gfSum}`;
-            
-            const locGroup = document.getElementById('recent-locations');
-            locGroup.innerHTML = "";
-            Array.from(locs).slice(-5).forEach(l => {
-                let s = document.createElement('span'); s.className='chip'; s.innerText=l;
-                s.onclick=()=>document.getElementById('location').value=l;
-                locGroup.appendChild(s);
+            document.getElementById('year-combined').innerText = `$${broSum + gfSum}`;
+
+            // 過濾顯示
+            let displayRecords = selectedDate 
+                ? records.filter(r => r.date === selectedDate)
+                : records.sort((a,b) => b.id - a.id).slice(0, 10); // 沒選日期就顯示最近10筆
+
+            document.getElementById('detail-title').innerText = selectedDate ? `📅 ${selectedDate} 明細` : "📜 最近戰績";
+
+            if(displayRecords.length === 0) {
+                listDiv.innerHTML = "<p style='text-align:center; color:#ccc; font-size:12px;'>這天沒有紀錄喔！</p>";
+                return;
+            }
+
+            displayRecords.forEach(r => {
+                const pName = names[r.player];
+                listDiv.innerHTML += `
+                    <div class="history-item">
+                        <div class="item-info">
+                            <div><b>${pName}</b> @ ${r.location || '未知地點'}</div>
+                            <small>${r.date}</small>
+                        </div>
+                        <div class="item-amount ${r.amount >= 0 ? 'win' : 'lose'}">
+                            ${r.amount >= 0 ? '+' : ''}${r.amount}
+                        </div>
+                        <button class="btn-delete" onclick="deleteRecord(${r.id})">×</button>
+                    </div>`;
             });
-
-            renderChart(broSum, gfSum);
         }
-
-        function renderChart(b, g) {
-            const ctx = document.getElementById('myChart').getContext('2d');
-            if(chartInstance) chartInstance.destroy();
-            chartInstance = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: [names.bro, names.gf],
-                    datasets: [{ data: [Math.abs(b)||1, Math.abs(g)||1], backgroundColor: ['#e63946', '#2a9d8f'] }]
-                },
-                options: { maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
-            });
-        }
-
-        function clearAll() { if(confirm("確定刪除所有紀錄？")) { localStorage.clear(); location.reload(); } }
     </script>
 </body>
 </html>
